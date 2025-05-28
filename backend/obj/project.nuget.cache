@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "UPuZOJpFHrQ=",
+  "dgSpecHash": "r6kzzs21NP4=",
   "success": true,
-  "projectFilePath": "C:\\Users\\benho\\OneDrive\\Desktop\\TCGMeTemplete\\backend\\backend.csproj",
-  "expectedPackageFiles": [],
+  "projectFilePath": "C:\\Users\\Ben\\Desktop\\TCGMe-1\\backend\\backend.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Ben\\.nuget\\packages\\system.net.http.json\\9.0.5\\system.net.http.json.9.0.5.nupkg.sha512"
+  ],
   "logs": []
 }

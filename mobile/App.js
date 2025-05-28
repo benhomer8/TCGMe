@@ -95,7 +95,7 @@ export default class App extends Component {
         type: 'image/jpeg',
       });
 
-      const response = await fetch('http://100.100.100.72:5000/api/photo/upload', {
+      const response = await fetch('http://192.168.1.12:5000/api/photo/upload', {
         method: 'POST',
         body: formData,
       });
