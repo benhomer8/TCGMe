@@ -1,0 +1,5 @@
+C:\Users\benho\OneDrive\Desktop\TCGMeTemplete\backend\obj\Debug\net7.0\backend.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\benho\OneDrive\Desktop\TCGMeTemplete\backend\obj\Debug\net7.0\backend.AssemblyInfoInputs.cache
+C:\Users\benho\OneDrive\Desktop\TCGMeTemplete\backend\obj\Debug\net7.0\backend.AssemblyInfo.cs
+C:\Users\benho\OneDrive\Desktop\TCGMeTemplete\backend\obj\Debug\net7.0\backend.csproj.CoreCompileInputs.cache
+C:\Users\benho\OneDrive\Desktop\TCGMeTemplete\backend\obj\Debug\net7.0\backend.MvcApplicationPartsAssemblyInfo.cache
