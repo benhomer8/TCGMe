@@ -6,9 +6,10 @@ import {
   Button,
   Text,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import * as FileSystem from 'expo-file-system';
 
 export default class App extends Component {
   constructor(props) {
@@ -17,27 +18,21 @@ export default class App extends Component {
       img: null,
       caption: '',
       loading: false,
-      photosLoading: true,
-      allPhotos: [], 
+      allPhotos: [],
     };
   }
 
   componentDidMount() {
-    console.log('Component mounted. Calling loadPhotos...');
     this.loadPhotos();
   }
 
   loadPhotos = async () => {
-
-    this.setState({ photosLoading: true });
-
     const { status } = await MediaLibrary.requestPermissionsAsync();
     if (status !== 'granted') {
       alert('Permission to access media library is required!');
       return;
     }
 
-    
     let allAssets = [];
     let hasNextPage = true;
     let after = null;
@@ -54,88 +49,102 @@ export default class App extends Component {
       after = media.endCursor;
     }
 
-    this.setState({ allPhotos: allAssets, photosLoading: false });
+    this.setState({ allPhotos: allAssets });
   };
 
   getRandomImage = async () => {
     const { allPhotos } = this.state;
-    if (!allPhotos.length) {
-      alert('No photos loaded yet.');
+    if (allPhotos.length === 0) {
+      alert('No photos found!');
       return;
     }
+
+    this.setState({ loading: true, caption: '', img: null });
 
     try {
       const randomIndex = Math.floor(Math.random() * allPhotos.length);
       const selected = allPhotos[randomIndex];
+
       const assetInfo = await MediaLibrary.getAssetInfoAsync(selected.id);
-      const fileUri = assetInfo.localUri || assetInfo.uri;
+      const imageUri = assetInfo.localUri || assetInfo.uri;
+
+      const result = await manipulateAsync(
+        imageUri,
+        [],
+        {
+          compress: 0.3,
+          format: SaveFormat.WEBP,
+        }
+      );
+
+      const resizedUri = result.uri;
+
+      const base64 = await FileSystem.readAsStringAsync(resizedUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
 
       this.setState(
         {
-          img: { uri: fileUri },
+          img: { uri: resizedUri },
           caption: '',
         },
         () => {
-          this.uploadImage(fileUri);
+          this.uploadBase64Image(base64);
         }
       );
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
+      alert('Error selecting or processing image.');
+      this.setState({ loading: false });
     }
   };
 
-  uploadImage = async (fileUri) => {
+  uploadBase64Image = async (base64) => {
     try {
-      this.setState({ loading: true });
-
-      const formData = new FormData();
-      formData.append('file', {
-        uri: fileUri,
-        name: 'image.jpg',
-        type: 'image/jpeg',
-      });
+      const payload = {
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Describe this image similar to a pokemon or yu-gi-oh short description in short description:' },
+              { type: 'image_url', image_url: { url: `data:image/webp;base64,${base64}` } },
+            ],
+          },
+        ],
+        model: 'gpt-4o',
+      };
 
       const response = await fetch('http://192.168.1.12:5000/api/photo/upload', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Upload failed: ${errText}`);
+      }
 
       const json = await response.json();
       this.setState({ caption: json.caption });
     } catch (error) {
-      console.error('Upload failed:', error);
-      alert('Failed to upload image');
+      console.error(error);
+      alert('Failed to upload image or get caption.');
     } finally {
       this.setState({ loading: false });
     }
   };
 
   render() {
-    const { img, caption, loading, photosLoading } = this.state;
-    if (photosLoading) {
-      return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text style={{ marginTop: 10 }}>Loading your photos...</Text>
-      </View>
-      );
-    }
-    
+    const { img, caption, loading } = this.state;
+
     return (
       <View style={styles.container}>
-        {img && (
-          <Image
-            style={styles.image}
-            source={{ uri: img.uri }}
-          />
-        )}
-
-
-
+        {img && <Image style={styles.image} source={{ uri: img.uri }} />}
         <Button title="🎲 Get Random Image" onPress={this.getRandomImage} />
-
         {loading && <ActivityIndicator size="large" color="#0000ff" style={{ marginTop: 20 }} />}
-
         {caption !== '' && (
           <View style={styles.card}>
             <Text style={styles.cardText}>{caption}</Text>
