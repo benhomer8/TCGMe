@@ -10,6 +10,7 @@ import {
 import * as MediaLibrary from 'expo-media-library';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system';
+import Card from './Card'; 
 
 export default class App extends Component {
   constructor(props) {
@@ -106,12 +107,12 @@ export default class App extends Component {
           {
             role: 'user',
             content: [
-              { type: 'text', text: 'Describe this image similar to a pokemon or yu-gi-oh short description in short description:' },
+              { type: 'text', text: 'Describe this image similar to a pokemon or yu-gi-oh in a short description following the format of Name of Card ----- Description: make sure name of card comes first then ----- into description' },
               { type: 'image_url', image_url: { url: `data:image/webp;base64,${base64}` } },
             ],
           },
         ],
-        model: 'gpt-4o',
+        
       };
 
       const response = await fetch('http://192.168.1.12:5000/api/photo/upload', {

@@ -32,15 +32,27 @@ namespace backend.Controllers
                 if (string.IsNullOrWhiteSpace(apiKey))
                     return StatusCode(500, "OpenAI API key is not configured.");
 
+                // Extract "messages" from the bound requestBody
+                if (!requestBody.TryGetProperty("messages", out var messages))
+                    return BadRequest(new { error = "Missing 'messages' in request body." });
+
+                // Build the new request body including model and max_tokens
+                var openAiPayload = new
+                {
+                    model = "gpt-4.1-nano-2025-04-14",
+                    messages = messages,
+                    max_tokens = 100,
+                };
+
+                var jsonString = JsonSerializer.Serialize(openAiPayload);
+
+                // Create OpenAI API request
                 var client = _httpClientFactory.CreateClient();
-
-                var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-
-                // Forward the entire requestBody JSON as-is to OpenAI API
-                string jsonString = requestBody.GetRawText();
-
-                request.Content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+                var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions")
+                {
+                    Headers = { Authorization = new AuthenticationHeaderValue("Bearer", apiKey) },
+                    Content = new StringContent(jsonString, Encoding.UTF8, "application/json")
+                };
 
                 var response = await client.SendAsync(request);
 
@@ -54,10 +66,10 @@ namespace backend.Controllers
                 using var responseStream = await response.Content.ReadAsStreamAsync();
                 using var jsonDoc = await JsonDocument.ParseAsync(responseStream);
                 var caption = jsonDoc.RootElement
-                                     .GetProperty("choices")[0]
-                                     .GetProperty("message")
-                                     .GetProperty("content")
-                                     .GetString();
+                                    .GetProperty("choices")[0]
+                                    .GetProperty("message")
+                                    .GetProperty("content")
+                                    .GetString();
 
                 return Ok(new { caption });
             }
@@ -67,5 +79,6 @@ namespace backend.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+
     }
 }
