@@ -9,6 +9,8 @@ import { useFocusEffect } from '@react-navigation/native';
 const { width } = Dimensions.get('window');
 const CARD_MARGIN = 5;
 const CARD_WIDTH = (width - CARD_MARGIN * 6) / 3; // for 3 cards per row
+const CARD_HEIGHT = CARD_WIDTH * 1.5; // assuming a 2:3 aspect ratio
+
 
 export default function CollectionScreen() {
   const [cards, setCards] = useState([]);
@@ -32,6 +34,7 @@ export default function CollectionScreen() {
 
   const renderCard = ({ item }) => (
     <TouchableOpacity onPress={() => setSelectedCard(item)} style={styles.card}>
+      <Text style={styles.meta}>{item.name}</Text>
       <Image source={{ uri: item.imageUri }} style={styles.image} />
       <Text numberOfLines={2} style={styles.caption}>{item.caption}</Text>
     </TouchableOpacity>
@@ -52,6 +55,7 @@ export default function CollectionScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <ScrollView>
+              <Text style={styles.modalCaption}>{selectedCard?.name}</Text>
               <Image source={{ uri: selectedCard?.imageUri }} style={styles.modalImage} />
               <Text style={styles.modalCaption}>{selectedCard?.caption}</Text>
               <Text style={styles.modalMeta}>
@@ -70,10 +74,14 @@ export default function CollectionScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9f9f9' },
-  list: { padding: 10 },
+  list: { 
+    alighItems: 'center',
+    justifyContent: 'center'  // Center the cards in the list
+  },
   card: {
     width: CARD_WIDTH,
     margin: CARD_MARGIN,
+    height: CARD_HEIGHT,
     backgroundColor: '#fff',
     borderRadius: 10,
     padding: 6,
@@ -95,6 +103,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#333',
     marginBottom: 2,
+    width: CARD_WIDTH - 12, // account for padding', 
+    maxHeight: 30
   },
   meta: {
     fontSize: 9,
