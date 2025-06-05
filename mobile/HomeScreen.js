@@ -16,6 +16,9 @@ import * as FileSystem from 'expo-file-system';
 import Card from './Card';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+
+
+const packImage = require('./assets/images/CardPack.png');
 const screenHeight = Dimensions.get('window').height;
 
 class HomeScreen extends Component {
@@ -29,6 +32,8 @@ class HomeScreen extends Component {
       loading: false,
       allPhotos: [],
       flyAnim: new Animated.Value(0),
+      packOpening: true,
+      packY: new Animated.Value(0),
     };
   }
 
@@ -71,7 +76,7 @@ class HomeScreen extends Component {
       return;
     }
 
-    this.setState({ loading: true, cards: [], currentIndex: 0 });
+    this.setState({ loading: true, cards: [], currentIndex: 0,});
 
     const newCards = [];
 
@@ -241,15 +246,47 @@ revealNextCard = () => {
         })
       );
     });
+  }else{
+    this.setState({ packOpening: false, cards: [] });
   }
 };
 
+  animatePackOpen = () => {
+    Animated.timing(this.state.packY, {
+      toValue: -300, // move up by 300 pixels
+      duration: 500,
+      useNativeDriver: true,
+    }).start(() => {
+      // starts after animation
+      this.setState({ packOpened: false, packY: new Animated.Value(0) }); // or trigger card reveal
+      this.packOpened();
+    });
+  };
+
   render() {
-  const { cards, currentIndex, loading, flyAnim } = this.state;
+  const { cards, currentIndex, loading, flyAnim, packOpening, packY } = this.state;
 
 return (
   <View style={styles.container}>
-    <Button title="Open New Pack" onPress={this.packOpened} />
+  
+
+  {packOpening && (
+    <TouchableOpacity onPress={this.animatePackOpen}>
+      <Animated.View style={{ transform: [{ translateY: packY }] }}>
+        <Image
+          source={packImage}
+          style={{
+          width: 200,
+          height: 300,
+          alignSelf: 'center',
+          resizeMode: 'contain',
+        }}
+        />
+      </Animated.View>
+    </TouchableOpacity>
+  )}
+        
+     
 
     {loading && (
       <ActivityIndicator size="large" color="#0000ff" style={{ marginTop: 20 }} />

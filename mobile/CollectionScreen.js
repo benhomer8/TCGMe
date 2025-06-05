@@ -84,7 +84,6 @@ const styles = StyleSheet.create({
     height: CARD_HEIGHT,
     backgroundColor: '#fff',
     borderRadius: 10,
-    padding: 6,
     alignItems: 'center',
     elevation: 2,
     shadowColor: '#000',
