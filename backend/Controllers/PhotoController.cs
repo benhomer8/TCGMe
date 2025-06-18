@@ -28,6 +28,7 @@ namespace backend.Controllers
         {
             try
             {
+                Console.WriteLine("Received request body:");
                 var apiKey = "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";
                 if (string.IsNullOrWhiteSpace(apiKey))
                     return StatusCode(500, "OpenAI API key is not configured.");

@@ -1,27 +1,32 @@
-import React, { Component } from 'react';
+import React, { Component} from 'react';
 import {
   StyleSheet,
   View,
   Image,
-  Button,
   Text,
   ActivityIndicator,
   TouchableOpacity,
   Dimensions,
   Animated,
+  Easing,
+  ImageBackground,
 } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { manipulateAsync, SaveFormat, useImageManipulator } from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system';
 import Card from './Card';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import  { LoadingContext }  from './LoadingContext';
 
 
 const packImage = require('./assets/images/CardPack.png');
+const backgroundImage = require('./assets/images/galaxyplaceholder.jpg');
 const screenHeight = Dimensions.get('window').height;
 
 class HomeScreen extends Component {
+
+  static contextType = LoadingContext;
+
   constructor(props) {
     super(props);
     this.state = {
@@ -39,7 +44,29 @@ class HomeScreen extends Component {
 
   componentDidMount() {
     this.loadPhotos();
-  }
+  this.startHover();
+}
+
+  startHover = () => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(this.state.packY, {
+          toValue: -15,
+          duration: 3000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(this.state.packY, {
+          toValue: 0,
+          duration: 3000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+
+
+      ])
+    ).start();
+  };
 
   loadPhotos = async () => {
     const { status } = await MediaLibrary.requestPermissionsAsync();
@@ -69,118 +96,81 @@ class HomeScreen extends Component {
 
 
   packOpened = async () => {
-    
     const { allPhotos } = this.state;
     if (allPhotos.length === 0) {
       alert('No photos found!');
       return;
     }
 
-    this.setState({ loading: true, cards: [], currentIndex: 0,});
-
-    const newCards = [];
+    this.context.setLoading(true);
+    this.setState({cards: [], currentIndex: 0 });
 
     const amountPerPack = 5; // Number of cards per pack
+    const failedImageIds = new Set();
 
-    for (let i = 0; i < amountPerPack; i++) {
-      try {
-        const randomIndex = Math.floor(Math.random() * allPhotos.length);
-        const selected = allPhotos[randomIndex];
+    const createSingleCard = async () => {
+      let attempts = 0;
+      while (attempts < 5) {
+        try {
+          const randomIndex = Math.floor(Math.random() * allPhotos.length);
+          const selected = allPhotos[randomIndex];
 
-        const assetInfo = await MediaLibrary.getAssetInfoAsync(selected.id);
-        const imageUri = assetInfo.localUri || assetInfo.uri;
-
-        const result = await manipulateAsync(
-          imageUri,
-          [],
-          {
-            compress: 0.3,
-            format: SaveFormat.WEBP,
+          if (failedImageIds.has(selected.id)) {
+            attempts++;
+            continue;
           }
-        );
 
-        const resizedUri = result.uri;
+          const assetInfo = await MediaLibrary.getAssetInfoAsync(selected.id);
+          const imageUri = assetInfo.localUri || assetInfo.uri;
+          
 
-        const base64 = await FileSystem.readAsStringAsync(resizedUri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
+          const result = await manipulateAsync(
+            imageUri,
+            [],
+            {
+              compress: 0.2,
+              format: SaveFormat.WEBP,
+            }
+          );
 
-        const caption = await this.uploadBase64Image(base64);
+          const resizedUri = result.uri;
 
-        const card = new Card(imageUri, caption, {
-          rarity: 'common',
-          isFullArt: false,
-        });
+          const base64 = await FileSystem.readAsStringAsync(resizedUri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
 
-        card.setCardName();
-        newCards.push(card);
-        this.saveCard(card);
+          const caption = await this.uploadBase64Image(base64);
 
-      } catch (error) {
-        console.error('Error generating card:', error);
+          if (!caption || (!(caption.toLowerCase().includes("--")))) {
+            failedImageIds.add(selected.id);
+            attempts++;
+            continue;
+          }
+
+          const card = new Card(imageUri, caption, {
+            rarity: 'common',
+            isFullArt: false,
+          });
+
+          card.setCardName();
+          this.saveCard(card);
+          return card;
+        } catch (error) {
+          console.error('Error generating card:', error);
+          attempts++;
+        }
       }
-    }
+      console.log('Failed to generate card after 5 attempts');
+      return null;
+    };
 
-    this.setState({ cards: newCards, loading: false, currentIndex: 0 });
-  };
-  
+    // Generate all cards concurrently
+    const cardPromises = Array.from({ length: amountPerPack }, () => createSingleCard());
+    const resolvedCards = await Promise.all(cardPromises);
+    const validCards = resolvedCards.filter(card => card !== null);
 
-
-
-  createCard = async () => {
-    const { allPhotos } = this.state;
-    if (allPhotos.length === 0) {
-      alert('No photos found!');
-      return;
-    }
-
-    this.setState({ loading: true, caption: '', img: null });
-
-    try {
-      const randomIndex = Math.floor(Math.random() * allPhotos.length);
-      const selected = allPhotos[randomIndex];
-
-      const assetInfo = await MediaLibrary.getAssetInfoAsync(selected.id);
-      const imageUri = assetInfo.localUri || assetInfo.uri;
-
-      const result = await manipulateAsync(
-        imageUri,
-        [],
-        {
-          compress: 0.3,
-          format: SaveFormat.WEBP,
-        }
-      );
-
-      const resizedUri = result.uri;
-
-      const base64 = await FileSystem.readAsStringAsync(resizedUri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
-      const caption = await this.uploadBase64Image(base64);
-
-      
-
-      const card = new Card(
-        imageUri,
-        caption,
-        {
-          rarity: "common",
-          isFullArt: false,
-        }
-      );
-      card.setCardName();
-
-      const newCards = [...this.state.cards, card];
-
-      this.setState({ cards: newCards, currentIndex: 0 });
-      this.saveCard(card);
-    } catch (error) {
-      console.error(error);
-      alert('Error selecting or processing image.');
-      this.setState({ loading: false });
-    }
+    this.context.setLoading(false);
+    this.setState({ cards: validCards,currentIndex: 0 });
   };
 
   uploadBase64Image = async (base64) => {
@@ -190,14 +180,18 @@ class HomeScreen extends Component {
           {
             role: 'user',
             content: [
-              { type: 'text', text: 'Describe this image similar to a pokemon or yu-gi-oh in a short description following the format of Name of Card ---- Description make sure name of card comes first then 4 dashes(-) ---- into description' },
+              {
+                type: 'text',
+                text: 'Describe this image similar to a pokemon or yu-gi-oh in a short description following the format of Name of Card ---- Description make sure name of card comes first then 4 dashes(-) ---- into description'
+              },
               { type: 'image_url', image_url: { url: `data:image/webp;base64,${base64}` } },
             ],
           },
         ],
       };
 
-      const response = await fetch('http://192.168.1.12:5000/api/photo/upload', {
+
+      const response = await fetch('http://192.168.1.18:5000/api/photo/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -212,10 +206,10 @@ class HomeScreen extends Component {
       return json.caption;
     } catch (error) {
       console.error(error);
-      alert('Failed to upload image or get caption.');
       return '';
     }
   };
+
 
   saveCard = async (newCard) => {
     try {
@@ -229,36 +223,37 @@ class HomeScreen extends Component {
     }
   };
 
-revealNextCard = () => {
-  const { currentIndex, cards } = this.state;
+  revealNextCard = () => {
+    const { currentIndex, cards } = this.state;
 
-  if (currentIndex < cards.length - 1) {
-    Animated.timing(this.state.flyAnim, {
-      toValue: -screenHeight,
-      duration: 400,
-      useNativeDriver: true,
-    }).start(() => {
-      // Immediately move to the next card and reset animation
-      this.setState(
-        prev => ({
-          currentIndex: prev.currentIndex + 1,
-          flyAnim: new Animated.Value(0), // Reset instantly
-        })
-      );
-    });
-  }else{
-    this.setState({ packOpening: false, cards: [] });
-  }
-};
+    if (currentIndex < cards.length - 1) {
+      Animated.timing(this.state.flyAnim, {
+        toValue: -screenHeight,
+        duration: 400,
+        useNativeDriver: true,
+      }).start(() => {
+        // Immediately move to the next card and reset animation
+        this.setState(
+          prev => ({
+            currentIndex: prev.currentIndex + 1,
+            flyAnim: new Animated.Value(0), // Reset instantly
+          })
+        );
+      });
+    }else{
+      this.setState({ packOpening: true, cards: [] });
+      this.startHover();
+    }
+  };
 
   animatePackOpen = () => {
     Animated.timing(this.state.packY, {
-      toValue: -300, // move up by 300 pixels
+      toValue: -600, // move up by 300 pixels
       duration: 500,
       useNativeDriver: true,
     }).start(() => {
       // starts after animation
-      this.setState({ packOpened: false, packY: new Animated.Value(0) }); // or trigger card reveal
+      this.setState({ packOpening: false, packY: new Animated.Value(0) }); // or trigger card reveal
       this.packOpened();
     });
   };
@@ -267,67 +262,72 @@ revealNextCard = () => {
   const { cards, currentIndex, loading, flyAnim, packOpening, packY } = this.state;
 
 return (
-  <View style={styles.container}>
   
-
-  {packOpening && (
-    <TouchableOpacity onPress={this.animatePackOpen}>
-      <Animated.View style={{ transform: [{ translateY: packY }] }}>
-        <Image
-          source={packImage}
-          style={{
-          width: 200,
-          height: 300,
-          alignSelf: 'center',
-          resizeMode: 'contain',
-        }}
-        />
-      </Animated.View>
-    </TouchableOpacity>
-  )}
+  
+  <ImageBackground source={backgroundImage} style={styles.container}>
+    {packOpening && (
+      <TouchableOpacity onPress={this.animatePackOpen}>
+        <Animated.View style={{ transform: [{ translateY: packY }] }}>
+          <Image
+            source={packImage}
+            style={{
+            width: 200,
+            height: 300,
+            alignSelf: 'center',
+            resizeMode: 'contain',
+          }}
+          />
+        </Animated.View>
+      </TouchableOpacity>
+    )}
         
      
 
-    {loading && (
+    {this.context.isLoading && (
       <ActivityIndicator size="large" color="#0000ff" style={{ marginTop: 20 }} />
     )}
 
-    <View style={{ height: 400 }}>
-      {cards.length > 0 && (
-        <TouchableOpacity onPress={this.revealNextCard} activeOpacity={0.9}>
-          <View style={{ position: 'relative', height: 400, alignItems: 'center'}}>
-            {cards.map((card, index) => {
-              if (index < currentIndex) return null; // Skip already revealed
+    
+    {cards.length > 0 && (
+      <TouchableOpacity onPress={this.revealNextCard} activeOpacity={0.9}>
+        <View style={styles.cardContainer}>
+          {cards.map((card, index) => {
+            // Skip cards already revealed
+            if (index < currentIndex) return null;
 
-              const isTopCard = index === currentIndex;
+            const isTopCard = index === currentIndex;
+            const animatedStyle = isTopCard
+              ? { transform: [{ translateY: this.state.flyAnim }] }
+              : {};
 
-              const animatedStyle = isTopCard
-                ? { transform: [{ translateY: flyAnim }] }
-                : {};
+            return (
+              <Animated.View
+                key={index}
+                style={[
+                  styles.card,
+                  {
+                    position: 'absolute',
+                    zIndex: cards.length - index, // stack order
+                  },
+                  animatedStyle,
+                ]}
+              >
+                <Text style={styles.namePlaceholder}>
+                  {card.name || 'Card Name'}
+                </Text>
+                <Image
+                  source={{ uri: card.imageUri }}
+                  style={styles.cardImage}
+                />
+                <Text style={styles.caption}>{card.caption}</Text>
+              </Animated.View>
+            );
+          })}
+        </View>
+      </TouchableOpacity>
+    )}
+  </ImageBackground>
 
-              return (
-                <Animated.View
-                  key={index}
-                  style={[
-                    styles.card,
-                    {
-                      position: 'absolute',
-                      zIndex: cards.length - index, // higher index = behind
-                    },
-                    animatedStyle,
-                  ]}
-                >
-                  <Text style={styles.namePlaceholder}>{card.name || 'Card Name'}</Text>
-                  <Image source={{ uri: card.imageUri }} style={styles.cardImage} />
-                  <Text style={styles.caption}>{card.caption}</Text>
-                </Animated.View>
-              );
-            })}
-          </View>
-        </TouchableOpacity>
-      )}
-    </View>
-  </View>
 );
 
 }
@@ -335,25 +335,41 @@ return (
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
+  container: {    
+    flex: 1,
+    resizeMode: 'cover',       // fill the screen
+    justifyContent: 'center',  // center children
+    alignItems: 'center',
+    backgroundColor: '#000',   // fallback black
+  },
+
+  cardContainer: {
+  width: '100%',
+  height: 400,
+  alignItems: 'center',
+  justifyContent: 'center',
+  position: 'relative',
+  },
+  
   card: {
     backgroundColor: '#fff',
     borderRadius: 10,
     padding: 10,
     height: 400,
     width: 300,
-    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 5,
   },
+  
   cardImage: {
     width: '100%',
     height: 200,
     borderRadius: 10,
   },
+ 
   caption: {
     fontSize: 14,
     color: '#333',
@@ -361,11 +377,13 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
   },
+  
   namePlaceholder: {
     fontWeight: 'bold',
     fontSize: 16,
     marginBottom: 5,
   },
+
 });
 
 export default HomeScreen;
