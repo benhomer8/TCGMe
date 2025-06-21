@@ -15,13 +15,17 @@ import * as MediaLibrary from 'expo-media-library';
 import { manipulateAsync, SaveFormat, useImageManipulator } from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system';
 import Card from './Card';
+import Star from './Star';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import  { LoadingContext }  from './LoadingContext';
-
+import LottieView from 'lottie-react-native';
 
 const packImage = require('./assets/images/CardPack.png');
-const backgroundImage = require('./assets/images/galaxyplaceholder.jpg');
-const screenHeight = Dimensions.get('window').height;
+const rainbowEffect = require('./assets/lottie_animations/rainbow_gradient.json');
+const packShine = require('./assets/lottie_animations/packCover.json');
+const { screenWidth, screenHeight } = Dimensions.get('window');
+const starCount = 100;
+
 
 class HomeScreen extends Component {
 
@@ -39,12 +43,15 @@ class HomeScreen extends Component {
       flyAnim: new Animated.Value(0),
       packOpening: true,
       packY: new Animated.Value(0),
+      starsY: new Animated.Value(0),
+      stars: [],
     };
   }
 
   componentDidMount() {
     this.loadPhotos();
-  this.startHover();
+    this.startHover();
+    this.setState({stars: this.generateStars()});
 }
 
   startHover = () => {
@@ -68,6 +75,18 @@ class HomeScreen extends Component {
     ).start();
   };
 
+  generateStars = () => {
+    return Array.from({ length: starCount }).map((_, index) => ({
+      id: index,
+      x: Math.random() * screenWidth,
+      y: Math.random() * screenHeight,
+      size: Math.random() * 4 + 2,
+    }));
+  };
+
+
+
+  
   loadPhotos = async () => {
     const { status } = await MediaLibrary.requestPermissionsAsync();
     if (status !== 'granted') {
@@ -128,7 +147,7 @@ class HomeScreen extends Component {
             imageUri,
             [],
             {
-              compress: 0.2,
+              compress: 0.1,
               format: SaveFormat.WEBP,
             }
           );
@@ -210,6 +229,7 @@ class HomeScreen extends Component {
     }
   };
 
+ 
 
   saveCard = async (newCard) => {
     try {
@@ -218,6 +238,7 @@ class HomeScreen extends Component {
       cards.push(newCard);
       await AsyncStorage.setItem('cards', JSON.stringify(cards));
       console.log('Card saved!');
+      console.log(newCard.isFoil);
     } catch (e) {
       console.error('Failed to save card:', e);
     }
@@ -247,6 +268,7 @@ class HomeScreen extends Component {
   };
 
   animatePackOpen = () => {
+    this.animateStarsDown();
     Animated.timing(this.state.packY, {
       toValue: -600, // move up by 300 pixels
       duration: 500,
@@ -258,25 +280,64 @@ class HomeScreen extends Component {
     });
   };
 
+  animateStarsDown = () => {
+    Animated.timing(this.state.starsY, {
+      toValue: screenHeight,
+      duration: 1000,
+      useNativeDriver: true,
+    }).start();
+  };
+
   render() {
-  const { cards, currentIndex, loading, flyAnim, packOpening, packY } = this.state;
+  const { cards, currentIndex, loading, flyAnim, packOpening, packY, stars, starsY } = this.state;
 
 return (
   
   
-  <ImageBackground source={backgroundImage} style={styles.container}>
+  <View style={styles.container}>
+
+    <Animated.View
+      style={{
+        ...StyleSheet.absoluteFillObject,
+        transform: [{ translateY: starsY }],
+      }}
+    >
+      {stars.map(star => (
+        <Star key={star.id} x={star.x} y={star.y} size={star.size} />
+      ))}
+    </Animated.View>
+
+
     {packOpening && (
       <TouchableOpacity onPress={this.animatePackOpen}>
-        <Animated.View style={{ transform: [{ translateY: packY }] }}>
+        <Animated.View style={{ transform: [{ translateY: packY }], justifyContent: 'center',  // center children
+          alignItems: 'center', position: 'relative', width:200, height: 300} }>
+
           <Image
             source={packImage}
             style={{
-            width: 200,
-            height: 300,
+            width: '100%',
+            height: '100%',
             alignSelf: 'center',
             resizeMode: 'contain',
+            position: "absolute",
           }}
           />
+
+          <LottieView
+            source={packShine}
+            autoPlay
+            loop
+            speed={0.5}
+            style={{width: '100%',
+                    height: '100%',
+                    alignSelf: 'center',
+                    resizeMode: 'contain',
+                    position: "absolute",
+                    opacity: 0.2,
+                  }}
+          />
+
         </Animated.View>
       </TouchableOpacity>
     )}
@@ -301,32 +362,52 @@ return (
               : {};
 
             return (
+
               <Animated.View
                 key={index}
                 style={[
                   styles.card,
                   {
-                    position: 'absolute',
                     zIndex: cards.length - index, // stack order
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   },
                   animatedStyle,
                 ]}
               >
-                <Text style={styles.namePlaceholder}>
-                  {card.name || 'Card Name'}
-                </Text>
-                <Image
-                  source={{ uri: card.imageUri }}
-                  style={styles.cardImage}
-                />
-                <Text style={styles.caption}>{card.caption}</Text>
+                
+                {card.isFoil && (
+                <LottieView
+                    source={rainbowEffect}
+                    autoPlay
+                    loop
+                    style={styles.rainbowRareEffect}
+                  />
+                )}
+
+                {/* Card content */}
+                <View style={styles.cardContent}>
+
+                  <Text style={styles.namePlaceholder}>
+                    {card.name || 'Card Name'}
+                  </Text>
+
+                  <Image
+                    source={{ uri: card.imageUri }}
+                    style={styles.cardImage}
+                  />
+
+                  <Text style={styles.caption}>{card.caption}</Text>
+
+                </View>
               </Animated.View>
+
             );
           })}
         </View>
       </TouchableOpacity>
     )}
-  </ImageBackground>
+  </View>
 
 );
 
@@ -352,16 +433,17 @@ const styles = StyleSheet.create({
   },
   
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 10,
-    height: 400,
-    width: 300,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+  backgroundColor: '#fff',
+  borderRadius: 10,
+  height: 400,
+  width: 300,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.3,
+  shadowRadius: 4,
+  elevation: 5,
+  overflow: 'hidden', 
+  position: 'absolute',
   },
   
   cardImage: {
@@ -383,6 +465,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 5,
   },
+
+  rainbowRareEffect: {
+  opacity: 0.3, 
+  zIndex: 1,
+  width: '200%',
+  height: '200%',
+  position: 'absolute',
+  resizeMode: 'cover', // cover the card
+  overflow: 'hidden', // ensure it doesn't overflow
+  },
+
+  
+  cardContent: {
+    zIndex: 2, // makes sure content is above the foil animation
+    position: 'absolute',
+  },
+
 
 });
 
