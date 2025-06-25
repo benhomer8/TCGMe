@@ -5,12 +5,14 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import LottieView from 'lottie-react-native';
+
 
 const { width } = Dimensions.get('window');
 const CARD_MARGIN = 5;
 const CARD_WIDTH = (width - CARD_MARGIN * 6) / 3; // for 3 cards per row
 const CARD_HEIGHT = CARD_WIDTH * 1.5; // assuming a 2:3 aspect ratio
-
+const rainbowEffect = require('./assets/lottie_animations/rainbow_gradient.json');
 
 export default function CollectionScreen() {
   const [cards, setCards] = useState([]);
@@ -34,6 +36,13 @@ export default function CollectionScreen() {
 
   const renderCard = ({ item }) => (
     <TouchableOpacity onPress={() => setSelectedCard(item)} style={styles.card}>
+      {item.isFoil && (
+      <LottieView
+          source={rainbowEffect}
+          autoPlay = {false}
+          style={styles.rainbowRareEffect}
+        />
+      )}
       <Text style={styles.meta}>{item.name}</Text>
       <Image source={{ uri: item.imageUri }} style={styles.image} />
       <Text numberOfLines={2} style={styles.caption}>{item.caption}</Text>
@@ -54,14 +63,21 @@ export default function CollectionScreen() {
       <Modal visible={!!selectedCard} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <ScrollView>
+              {selectedCard?.isFoil && (
+              <LottieView
+                  source={rainbowEffect}
+                  autoPlay
+                  loop
+                  style={styles.rainbowRareEffect}
+                />
+              )}
               <Text style={styles.modalCaption}>{selectedCard?.name}</Text>
               <Image source={{ uri: selectedCard?.imageUri }} style={styles.modalImage} />
               <Text style={styles.modalCaption}>{selectedCard?.caption}</Text>
               <Text style={styles.modalMeta}>
-                {selectedCard?.rarity} {selectedCard?.isFullArt ? '• Full Art' : ''}
+                {selectedCard?.createdAt } 
               </Text>
-            </ScrollView>
+ 
             <TouchableOpacity onPress={() => setSelectedCard(null)} style={styles.closeButton}>
               <Text style={{ color: '#fff' }}>Close</Text>
             </TouchableOpacity>
@@ -92,10 +108,11 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   image: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 6,
-    marginBottom: 4,
+    width: '90%',
+    height: '50%',
+    borderRadius: 7,
+    marginBottom: "5%",
+    marginTop: '3%',
   },
   caption: {
     fontSize: 10,
@@ -106,8 +123,9 @@ const styles = StyleSheet.create({
     maxHeight: 30
   },
   meta: {
-    fontSize: 9,
-    color: '#666',
+    fontSize: 11,
+    color: 'black',
+    marginTop: '3%'
   },
   modalOverlay: {
     flex: 1,
@@ -118,18 +136,25 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '100%',
+    height: "60%",
     backgroundColor: '#fff',
     borderRadius: 10,
-    padding: 15,
     alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   modalImage: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 10,
-    marginBottom: 10,
+    width: '90%',
+    height: '50%',
+    borderRadius: 7,
+    marginBottom: "2%",
+    marginTop: '2%',
   },
   modalCaption: {
+    marginTop: '3%',
     fontSize: 16,
     fontStyle: 'italic',
     color: '#222',
@@ -137,6 +162,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   modalMeta: {
+    marginTop: '3%',
     fontSize: 14,
     color: '#555',
     textAlign: 'center',
@@ -147,4 +173,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#333',
     borderRadius: 6,
   },
+
+  rainbowRareEffect: {
+    opacity: 0.3, 
+    width: '200%',
+    height: '200%',
+    position: 'absolute',
+    resizeMode: 'cover', // cover the card
+    overflow: 'hidden', // ensure it doesn't overflow
+  },
+
 });

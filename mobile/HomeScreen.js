@@ -15,21 +15,21 @@ import * as MediaLibrary from 'expo-media-library';
 import { manipulateAsync, SaveFormat, useImageManipulator } from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system';
 import Card from './Card';
-import Star from './Star';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import  { LoadingContext }  from './LoadingContext';
 import LottieView from 'lottie-react-native';
+import { Video } from 'expo-av';
 
 const packImage = require('./assets/images/CardPack.png');
 const rainbowEffect = require('./assets/lottie_animations/rainbow_gradient.json');
+const starFall = require('./assets/videos/starFall.mp4');
 const packShine = require('./assets/lottie_animations/packCover.json');
 const { screenWidth, screenHeight } = Dimensions.get('window');
-const starCount = 100;
-
 
 class HomeScreen extends Component {
 
   static contextType = LoadingContext;
+  
 
   constructor(props) {
     super(props);
@@ -43,15 +43,13 @@ class HomeScreen extends Component {
       flyAnim: new Animated.Value(0),
       packOpening: true,
       packY: new Animated.Value(0),
-      starsY: new Animated.Value(0),
-      stars: [],
+      shouldPlay: false,
     };
   }
 
   componentDidMount() {
     this.loadPhotos();
     this.startHover();
-    this.setState({stars: this.generateStars()});
 }
 
   startHover = () => {
@@ -75,14 +73,6 @@ class HomeScreen extends Component {
     ).start();
   };
 
-  generateStars = () => {
-    return Array.from({ length: starCount }).map((_, index) => ({
-      id: index,
-      x: Math.random() * screenWidth,
-      y: Math.random() * screenHeight,
-      size: Math.random() * 4 + 2,
-    }));
-  };
 
 
 
@@ -262,13 +252,15 @@ class HomeScreen extends Component {
         );
       });
     }else{
-      this.setState({ packOpening: true, cards: [] });
+      this.setState({ packOpening: true, cards: [], shouldPlay: false });
       this.startHover();
     }
   };
 
   animatePackOpen = () => {
-    this.animateStarsDown();
+    
+    this.setState({ shouldPlay: true });
+
     Animated.timing(this.state.packY, {
       toValue: -600, // move up by 300 pixels
       duration: 500,
@@ -280,32 +272,24 @@ class HomeScreen extends Component {
     });
   };
 
-  animateStarsDown = () => {
-    Animated.timing(this.state.starsY, {
-      toValue: screenHeight,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start();
-  };
+  
 
   render() {
-  const { cards, currentIndex, loading, flyAnim, packOpening, packY, stars, starsY } = this.state;
+  const { cards, currentIndex, loading, flyAnim, packOpening, packY, shouldPlay } = this.state;
 
 return (
   
   
   <View style={styles.container}>
 
-    <Animated.View
-      style={{
-        ...StyleSheet.absoluteFillObject,
-        transform: [{ translateY: starsY }],
-      }}
-    >
-      {stars.map(star => (
-        <Star key={star.id} x={star.x} y={star.y} size={star.size} />
-      ))}
-    </Animated.View>
+    <Video
+      source={starFall} 
+      style={StyleSheet.absoluteFill}                   
+      resizeMode="cover"                                
+      repeat={true}                                     
+      paused={!shouldPlay}                  
+      muted={true}                                      
+    />
 
 
     {packOpening && (
@@ -447,9 +431,9 @@ const styles = StyleSheet.create({
   },
   
   cardImage: {
-    width: '100%',
+    width: '10%',
     height: 200,
-    borderRadius: 10,
+    borderRadius: 7,
   },
  
   caption: {
@@ -464,22 +448,32 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     marginBottom: 5,
+    textAlign: "right",
   },
 
   rainbowRareEffect: {
-  opacity: 0.3, 
-  zIndex: 1,
-  width: '200%',
-  height: '200%',
-  position: 'absolute',
-  resizeMode: 'cover', // cover the card
-  overflow: 'hidden', // ensure it doesn't overflow
+    opacity: 0.3, 
+    zIndex: 1,
+    width: '200%',
+    height: '200%',
+    position: 'absolute',
+    resizeMode: 'cover', // cover the card
+    overflow: 'hidden', // ensure it doesn't overflow
   },
 
   
   cardContent: {
     zIndex: 2, // makes sure content is above the foil animation
     position: 'absolute',
+    justifyContent: 'center',
+  },
+
+  starLottie: {
+    width: '200%',
+    height: '200%',
+    position: 'absolute',
+    resizeMode: 'cover', // cover the card
+    overflow: 'hidden', // ensure it doesn't overflow
   },
 
 
