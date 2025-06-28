@@ -200,7 +200,7 @@ class HomeScreen extends Component {
       };
 
 
-      const response = await fetch('http://192.168.1.18:5000/api/photo/upload', {
+      const response = await fetch('https://35cc-76-149-175-113.ngrok-free.app/api/photo/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -282,14 +282,7 @@ return (
   
   <View style={styles.container}>
 
-    <Video
-      source={starFall} 
-      style={StyleSheet.absoluteFill}                   
-      resizeMode="cover"                                
-      repeat={true}                                     
-      paused={!shouldPlay}                  
-      muted={true}                                      
-    />
+    
 
 
     {packOpening && (
@@ -333,7 +326,7 @@ return (
     )}
 
     
-    {cards.length > 0 && (
+     {cards.length > 0 && (
       <TouchableOpacity onPress={this.revealNextCard} activeOpacity={0.9}>
         <View style={styles.cardContainer}>
           {cards.map((card, index) => {
@@ -383,6 +376,10 @@ return (
 
                   <Text style={styles.caption}>{card.caption}</Text>
 
+                  
+
+
+
                 </View>
               </Animated.View>
 
@@ -408,6 +405,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',   // fallback black
   },
 
+  cardContent: {
+      zIndex: 2,
+      position: 'absolute',
+      alignItems: 'center',
+      width: '100%',
+      height: '100%',
+  },
+
   cardContainer: {
   width: '100%',
   height: 400,
@@ -421,34 +426,35 @@ const styles = StyleSheet.create({
   borderRadius: 10,
   height: 400,
   width: 300,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.3,
-  shadowRadius: 4,
-  elevation: 5,
   overflow: 'hidden', 
   position: 'absolute',
   },
   
   cardImage: {
-    width: '10%',
-    height: 200,
+    width: '90%',
+    height: '50%',
     borderRadius: 7,
+    marginBottom: "5%",
+    marginTop: '3%',
   },
  
   caption: {
     fontSize: 14,
     color: '#333',
     marginTop: 10,
+    marginBottom: 2,
     fontStyle: 'italic',
     textAlign: 'center',
+    maxWidth: '95%',
   },
   
   namePlaceholder: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginBottom: 5,
-    textAlign: "right",
+    fontSize: 18,
+    color: 'black',
+    maxWidth: '95%',
+    maxHeight: '10%',
+    textAlign: "center",
+    marginTop: '7%',
   },
 
   rainbowRareEffect: {
@@ -462,11 +468,7 @@ const styles = StyleSheet.create({
   },
 
   
-  cardContent: {
-    zIndex: 2, // makes sure content is above the foil animation
-    position: 'absolute',
-    justifyContent: 'center',
-  },
+  
 
   starLottie: {
     width: '200%',

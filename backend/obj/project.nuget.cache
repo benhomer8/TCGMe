@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "r6kzzs21NP4=",
+  "dgSpecHash": "nVwlEz/Kpg4=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Ben\\Desktop\\TCGMe-1\\backend\\backend.csproj",
+  "projectFilePath": "C:\\Users\\Ben\\Desktop\\TCGMe\\backend\\backend.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Ben\\.nuget\\packages\\system.net.http.json\\9.0.5\\system.net.http.json.9.0.5.nupkg.sha512"
   ],

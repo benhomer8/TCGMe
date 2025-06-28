@@ -6,8 +6,8 @@ class Card {
     this.caption = caption;
     this.rarity = options.rarity || "common";
     this.isFullArt = options.isFullArt || false;
-    this.isFoil = Math.random() < 0.5;
-    this.createdAt = new Date().toISOString();
+    this.isFoil = Math.random() < 0.2;
+    this.createdAt = new Date().toDateString();
     this.name = options.name || "Untitled Card";
   }
 

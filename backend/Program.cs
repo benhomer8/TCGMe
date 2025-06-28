@@ -7,8 +7,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 var config = builder.Configuration;
 
+
+
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
+    serverOptions.Limits.MinRequestBodyDataRate = null;
     serverOptions.ListenAnyIP(5000); // Allows requests on your local network at port 5000
 });
 
@@ -17,6 +20,10 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 
 var app = builder.Build();
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
+
+
+
+app.UseCors("AllowAll");
 app.MapControllers();
 app.Run();

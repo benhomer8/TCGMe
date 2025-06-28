@@ -6,7 +6,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import LottieView from 'lottie-react-native';
-
+import LogoSVG from './LogoSVG';
 
 const { width } = Dimensions.get('window');
 const CARD_MARGIN = 5;
@@ -43,9 +43,9 @@ export default function CollectionScreen() {
           style={styles.rainbowRareEffect}
         />
       )}
-      <Text style={styles.meta}>{item.name}</Text>
+      <Text style={styles.name}>{item.name}</Text>
       <Image source={{ uri: item.imageUri }} style={styles.image} />
-      <Text numberOfLines={2} style={styles.caption}>{item.caption}</Text>
+      <Text numberOfLines={3} style={styles.caption}>{item.caption}</Text>
     </TouchableOpacity>
   );
 
@@ -71,17 +71,26 @@ export default function CollectionScreen() {
                   style={styles.rainbowRareEffect}
                 />
               )}
-              <Text style={styles.modalCaption}>{selectedCard?.name}</Text>
+              <Text style={[ 
+                styles.name,{
+                fontSize: 20,
+                marginTop: '3%'
+              }
+            ]
+              }>{selectedCard?.name}</Text>
               <Image source={{ uri: selectedCard?.imageUri }} style={styles.modalImage} />
-              <Text style={styles.modalCaption}>{selectedCard?.caption}</Text>
-              <Text style={styles.modalMeta}>
-                {selectedCard?.createdAt } 
-              </Text>
- 
-            <TouchableOpacity onPress={() => setSelectedCard(null)} style={styles.closeButton}>
+              <Text numberOfLines={6} style={styles.modalCaption}>{selectedCard?.caption}</Text>
+              <View>
+                <Text style={styles.modalMeta}>
+                  {selectedCard?.createdAt } 
+                </Text>
+              </View>
+          </View>
+
+          <TouchableOpacity onPress={() => setSelectedCard(null)} style={styles.closeButton}>
               <Text style={{ color: '#fff' }}>Close</Text>
             </TouchableOpacity>
-          </View>
+            
         </View>
       </Modal>
     </View>
@@ -89,7 +98,7 @@ export default function CollectionScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9f9f9' },
+  container: { flex: 1, backgroundColor: 'grey' },
   list: { 
     alighItems: 'center',
     justifyContent: 'center'  // Center the cards in the list
@@ -98,34 +107,34 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     margin: CARD_MARGIN,
     height: CARD_HEIGHT,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFF',
     borderRadius: 10,
     alignItems: 'center',
+    justifyContent: 'center',
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    overflow: 'hidden'
   },
   image: {
     width: '90%',
     height: '50%',
     borderRadius: 7,
-    marginBottom: "5%",
+    marginBottom: "4%",
     marginTop: '3%',
   },
   caption: {
     fontSize: 10,
     textAlign: 'center',
     color: '#333',
-    marginBottom: 2,
+    marginTop: '5%',
     width: CARD_WIDTH - 12, // account for padding', 
-    maxHeight: 30
+    maxHeight: '40%',
   },
-  meta: {
+  name:{
     fontSize: 11,
     color: 'black',
-    marginTop: '3%'
+    marginTop: '-10%',
+    maxWidth: '95%',
+    maxHeight: '10%',
   },
   modalOverlay: {
     flex: 1,
@@ -141,10 +150,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    overflow: 'hidden'
   },
   modalImage: {
     width: '90%',
@@ -160,12 +166,15 @@ const styles = StyleSheet.create({
     color: '#222',
     marginBottom: 6,
     textAlign: 'center',
+    maxWidth: "90%",
+    maxHeight: '30%'
   },
   modalMeta: {
-    marginTop: '3%',
+    marginTop: '10%',
     fontSize: 14,
     color: '#555',
     textAlign: 'center',
+    fontStyle: 'italic'
   },
   closeButton: {
     marginTop: 15,
@@ -179,8 +188,7 @@ const styles = StyleSheet.create({
     width: '200%',
     height: '200%',
     position: 'absolute',
-    resizeMode: 'cover', // cover the card
-    overflow: 'hidden', // ensure it doesn't overflow
+    overflow: 'hidden'
   },
 
 });
