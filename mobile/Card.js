@@ -9,6 +9,7 @@ class Card {
     this.isFoil = Math.random() < 0.2;
     this.createdAt = new Date().toDateString();
     this.name = options.name || "Untitled Card";
+    this.color = options.color || "white";
   }
 
   setCardName() {
@@ -20,8 +21,18 @@ class Card {
       
 
     }
+    else if (this.caption.includes('---')) {
+      const splitCaption = this.caption.split('---')
+      this.name = splitCaption[0].trim();
+      this.caption = splitCaption[1].trim();
+      
 
+    }
 
+    if(!(this.isFoil)){
+      items = ["white", "lightsalmon", "navajowhite", "paleturquoise", "powderblue", "palegreen", "plum", "lightsteelblue", "lemonchiffon", "lavender"];
+      this.color = items[Math.floor(Math.random()*items.length)];
+    }
 
   }
 

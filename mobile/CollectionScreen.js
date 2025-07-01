@@ -7,8 +7,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import LottieView from 'lottie-react-native';
 import LogoSVG from './LogoSVG';
+import BackgroundSVG from './BackgroundSVG'; 
+import { FadeInRight } from 'react-native-reanimated';
+import InteractiveCard from './InteractiveCard';
 
-const { width } = Dimensions.get('window');
+
+const { height: height, width: width } = Dimensions.get('window');
 const CARD_MARGIN = 5;
 const CARD_WIDTH = (width - CARD_MARGIN * 6) / 3; // for 3 cards per row
 const CARD_HEIGHT = CARD_WIDTH * 1.5; // assuming a 2:3 aspect ratio
@@ -35,7 +39,7 @@ export default function CollectionScreen() {
   );
 
   const renderCard = ({ item }) => (
-    <TouchableOpacity onPress={() => setSelectedCard(item)} style={styles.card}>
+    <TouchableOpacity onPress={() => setSelectedCard(item)} style={[styles.card, { backgroundColor: item?.color || '#fff' }]}>
       {item.isFoil && (
       <LottieView
           source={rainbowEffect}
@@ -51,6 +55,8 @@ export default function CollectionScreen() {
 
   return (
     <View style={styles.container}>
+      <BackgroundSVG style ={{position: 'absolute', width: '200%', height: '100%' }}> </BackgroundSVG>
+      
       <FlatList
         data={cards}
         keyExtractor={(item, index) => index.toString()}
@@ -62,30 +68,12 @@ export default function CollectionScreen() {
       {/* Zoom Modal */}
       <Modal visible={!!selectedCard} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-              {selectedCard?.isFoil && (
-              <LottieView
-                  source={rainbowEffect}
-                  autoPlay
-                  loop
-                  style={styles.rainbowRareEffect}
-                />
-              )}
-              <Text style={[ 
-                styles.name,{
-                fontSize: 20,
-                marginTop: '3%'
-              }
-            ]
-              }>{selectedCard?.name}</Text>
-              <Image source={{ uri: selectedCard?.imageUri }} style={styles.modalImage} />
-              <Text numberOfLines={6} style={styles.modalCaption}>{selectedCard?.caption}</Text>
-              <View>
-                <Text style={styles.modalMeta}>
-                  {selectedCard?.createdAt } 
-                </Text>
-              </View>
-          </View>
+          
+          <InteractiveCard
+            selectedCard={selectedCard}
+            CARD_HEIGHT={height * 0.6}
+            CARD_WIDTH={width * 0.9}
+            ></InteractiveCard>
 
           <TouchableOpacity onPress={() => setSelectedCard(null)} style={styles.closeButton}>
               <Text style={{ color: '#fff' }}>Close</Text>
@@ -98,9 +86,10 @@ export default function CollectionScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'grey' },
+  container: { flex: 1, backgroundColor: 'grey', alignItems: 'center',
+    justifyContent: 'center',},
   list: { 
-    alighItems: 'center',
+
     justifyContent: 'center'  // Center the cards in the list
   },
   card: {
@@ -112,14 +101,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 2,
-    overflow: 'hidden'
+    overflow: 'hidden',
+    borderColor: 'grey',
+    borderWidth: 2,
   },
   image: {
     width: '90%',
     height: '50%',
-    borderRadius: 7,
+    borderRadius: 5,
     marginBottom: "4%",
     marginTop: '3%',
+    borderColor: 'grey',
+    borderWidth: 1,
   },
   caption: {
     fontSize: 10,
@@ -142,6 +135,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    zIndex: 1,
   },
   modalContent: {
     width: '100%',
@@ -150,31 +144,32 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     elevation: 2,
-    overflow: 'hidden'
+    overflow: 'hidden',
+
   },
   modalImage: {
-    width: '90%',
+    width: '93%',
     height: '50%',
-    borderRadius: 7,
-    marginBottom: "2%",
+    borderRadius: 5,
     marginTop: '2%',
+    borderColor: 'grey',
+    borderWidth: 2,
   },
   modalCaption: {
-    marginTop: '3%',
     fontSize: 16,
     fontStyle: 'italic',
     color: '#222',
     marginBottom: 6,
     textAlign: 'center',
     maxWidth: "90%",
-    maxHeight: '30%'
+    
   },
   modalMeta: {
     marginTop: '10%',
     fontSize: 14,
     color: '#555',
     textAlign: 'center',
-    fontStyle: 'italic'
+    fontStyle: 'italic',
   },
   closeButton: {
     marginTop: 15,

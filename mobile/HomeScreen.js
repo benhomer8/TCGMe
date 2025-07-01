@@ -7,9 +7,9 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Dimensions,
-  Animated,
   Easing,
   ImageBackground,
+  Animated,
 } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import { manipulateAsync, SaveFormat, useImageManipulator } from 'expo-image-manipulator';
@@ -18,13 +18,15 @@ import Card from './Card';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import  { LoadingContext }  from './LoadingContext';
 import LottieView from 'lottie-react-native';
-import { Video } from 'expo-av';
+import BackgroundSVG from './BackgroundSVG';
+import LogoSVG from './LogoSVG';
+import InteractiveCard from './InteractiveCard';
+
 
 const packImage = require('./assets/images/CardPack.png');
 const rainbowEffect = require('./assets/lottie_animations/rainbow_gradient.json');
-const starFall = require('./assets/videos/starFall.mp4');
 const packShine = require('./assets/lottie_animations/packCover.json');
-const { screenWidth, screenHeight } = Dimensions.get('window');
+const { height: screenHeight, width: screenWidth } = Dimensions.get('window');
 
 class HomeScreen extends Component {
 
@@ -40,7 +42,6 @@ class HomeScreen extends Component {
       caption: '',
       loading: false,
       allPhotos: [],
-      flyAnim: new Animated.Value(0),
       packOpening: true,
       packY: new Animated.Value(0),
       shouldPlay: false,
@@ -114,7 +115,7 @@ class HomeScreen extends Component {
     this.context.setLoading(true);
     this.setState({cards: [], currentIndex: 0 });
 
-    const amountPerPack = 5; // Number of cards per pack
+    const amountPerPack = 3; // Number of cards per pack
     const failedImageIds = new Set();
 
     const createSingleCard = async () => {
@@ -177,9 +178,12 @@ class HomeScreen extends Component {
     const cardPromises = Array.from({ length: amountPerPack }, () => createSingleCard());
     const resolvedCards = await Promise.all(cardPromises);
     const validCards = resolvedCards.filter(card => card !== null);
-
+    const cardsWithAnim = validCards.map(card => ({
+      ...card,
+      flyAnim: new Animated.Value(0),
+    }));
     this.context.setLoading(false);
-    this.setState({ cards: validCards,currentIndex: 0 });
+    this.setState({ cards: cardsWithAnim,currentIndex: 0 });
   };
 
   uploadBase64Image = async (base64) => {
@@ -200,7 +204,7 @@ class HomeScreen extends Component {
       };
 
 
-      const response = await fetch('https://35cc-76-149-175-113.ngrok-free.app/api/photo/upload', {
+      const response = await fetch('https://tcgme.onrender.com/api/photo/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -238,16 +242,19 @@ class HomeScreen extends Component {
     const { currentIndex, cards } = this.state;
 
     if (currentIndex < cards.length - 1) {
-      Animated.timing(this.state.flyAnim, {
+
+      const topCardAnim = cards[currentIndex].flyAnim;
+
+      Animated.timing(topCardAnim, {
         toValue: -screenHeight,
         duration: 400,
         useNativeDriver: true,
       }).start(() => {
+
         // Immediately move to the next card and reset animation
         this.setState(
           prev => ({
             currentIndex: prev.currentIndex + 1,
-            flyAnim: new Animated.Value(0), // Reset instantly
           })
         );
       });
@@ -275,14 +282,14 @@ class HomeScreen extends Component {
   
 
   render() {
-  const { cards, currentIndex, loading, flyAnim, packOpening, packY, shouldPlay } = this.state;
+  const { cards, currentIndex, packOpening, packY, } = this.state;
 
 return (
   
   
   <View style={styles.container}>
 
-    
+    <BackgroundSVG style ={{position: 'absolute', width: '200%', height: '100%' }}> </BackgroundSVG>
 
 
     {packOpening && (
@@ -293,8 +300,8 @@ return (
           <Image
             source={packImage}
             style={{
-            width: '100%',
-            height: '100%',
+            width: '150%',
+            height: '150%',
             alignSelf: 'center',
             resizeMode: 'contain',
             position: "absolute",
@@ -306,8 +313,8 @@ return (
             autoPlay
             loop
             speed={0.5}
-            style={{width: '100%',
-                    height: '100%',
+            style={{width: '150%',
+                    height: '150%',
                     alignSelf: 'center',
                     resizeMode: 'contain',
                     position: "absolute",
@@ -335,9 +342,9 @@ return (
 
             const isTopCard = index === currentIndex;
             const animatedStyle = isTopCard
-              ? { transform: [{ translateY: this.state.flyAnim }] }
+              ? { transform: [{ translateY: card.flyAnim }] }
               : {};
-
+            
             return (
 
               <Animated.View
@@ -345,42 +352,14 @@ return (
                 style={[
                   styles.card,
                   {
-                    zIndex: cards.length - index, // stack order
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  },
+                  zIndex: cards.length - index, // stack order
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                },
                   animatedStyle,
                 ]}
               >
-                
-                {card.isFoil && (
-                <LottieView
-                    source={rainbowEffect}
-                    autoPlay
-                    loop
-                    style={styles.rainbowRareEffect}
-                  />
-                )}
-
-                {/* Card content */}
-                <View style={styles.cardContent}>
-
-                  <Text style={styles.namePlaceholder}>
-                    {card.name || 'Card Name'}
-                  </Text>
-
-                  <Image
-                    source={{ uri: card.imageUri }}
-                    style={styles.cardImage}
-                  />
-
-                  <Text style={styles.caption}>{card.caption}</Text>
-
-                  
-
-
-
-                </View>
+                <InteractiveCard selectedCard={card} CARD_HEIGHT={screenHeight * 0.5} CARD_WIDTH={screenWidth * 0.8}></InteractiveCard>
               </Animated.View>
 
             );
@@ -405,78 +384,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',   // fallback black
   },
 
-  cardContent: {
-      zIndex: 2,
-      position: 'absolute',
-      alignItems: 'center',
-      width: '100%',
-      height: '100%',
-  },
+  
 
   cardContainer: {
   width: '100%',
-  height: 400,
+  height: '80%',
   alignItems: 'center',
   justifyContent: 'center',
   position: 'relative',
   },
   
   card: {
-  backgroundColor: '#fff',
-  borderRadius: 10,
-  height: 400,
-  width: 300,
-  overflow: 'hidden', 
+  backgroundColor: 'transparent',
   position: 'absolute',
   },
   
-  cardImage: {
-    width: '90%',
-    height: '50%',
-    borderRadius: 7,
-    marginBottom: "5%",
-    marginTop: '3%',
-  },
+  
  
-  caption: {
-    fontSize: 14,
-    color: '#333',
-    marginTop: 10,
-    marginBottom: 2,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    maxWidth: '95%',
-  },
   
-  namePlaceholder: {
-    fontSize: 18,
-    color: 'black',
-    maxWidth: '95%',
-    maxHeight: '10%',
-    textAlign: "center",
-    marginTop: '7%',
-  },
-
-  rainbowRareEffect: {
-    opacity: 0.3, 
-    zIndex: 1,
-    width: '200%',
-    height: '200%',
-    position: 'absolute',
-    resizeMode: 'cover', // cover the card
-    overflow: 'hidden', // ensure it doesn't overflow
-  },
+  
 
   
   
 
-  starLottie: {
-    width: '200%',
-    height: '200%',
-    position: 'absolute',
-    resizeMode: 'cover', // cover the card
-    overflow: 'hidden', // ensure it doesn't overflow
-  },
 
 
 });
