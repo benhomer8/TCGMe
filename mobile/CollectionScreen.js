@@ -103,7 +103,11 @@ const styles = StyleSheet.create({
     elevation: 2,
     overflow: 'hidden',
     borderColor: 'grey',
-    borderWidth: 2,
+    borderWidth:2,
+    shadowColor: 'black',
+    shadowOffset: 10,
+    shadowOpacity: 10,
+    shadowRadius: 20,
   },
   image: {
     width: '90%',
@@ -184,6 +188,7 @@ const styles = StyleSheet.create({
     height: '200%',
     position: 'absolute',
     overflow: 'hidden'
+    
   },
 
 });

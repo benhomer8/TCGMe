@@ -24,7 +24,7 @@ import InteractiveCard from './InteractiveCard';
 
 
 const packImage = require('./assets/images/CardPack.png');
-const rainbowEffect = require('./assets/lottie_animations/rainbow_gradient.json');
+const background = require('./assets/lottie_animations/backgroundgradient.json');
 const packShine = require('./assets/lottie_animations/packCover.json');
 const { height: screenHeight, width: screenWidth } = Dimensions.get('window');
 
@@ -289,7 +289,16 @@ return (
   
   <View style={styles.container}>
 
-    <BackgroundSVG style ={{position: 'absolute', width: '200%', height: '100%' }}> </BackgroundSVG>
+    <LottieView
+      source={background}
+            autoPlay
+            loop
+            speed={0.5}
+            style={{width: '150%',
+                    height: '150%',
+                    position: "absolute",
+                  }}>
+    </LottieView>
 
 
     {packOpening && (
@@ -305,6 +314,10 @@ return (
             alignSelf: 'center',
             resizeMode: 'contain',
             position: "absolute",
+            shadowColor: 'black',
+            shadowOffset: 20,
+            shadowRadius: 10,
+            shadowOpacity: 10,
           }}
           />
 
@@ -312,7 +325,7 @@ return (
             source={packShine}
             autoPlay
             loop
-            speed={0.5}
+            speed={.8}
             style={{width: '150%',
                     height: '150%',
                     alignSelf: 'center',
