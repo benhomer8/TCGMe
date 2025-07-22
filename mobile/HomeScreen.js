@@ -44,7 +44,12 @@ class HomeScreen extends Component {
       allPhotos: [],
       packOpening: true,
       packY: new Animated.Value(0),
+      packRotate: new Animated.Value(0),
+      packShake: new Animated.Value(0),
       shouldPlay: false,
+      showWhiteFlash: false,
+      packBreaking: false,
+      cardsReady: false, 
     };
   }
 
@@ -103,6 +108,9 @@ class HomeScreen extends Component {
 
     this.setState({ allPhotos: allAssets });
   };
+
+
+  
 
 
   packOpened = async () => {
@@ -189,7 +197,8 @@ class HomeScreen extends Component {
       flyAnim: new Animated.Value(0),
     }));
     this.context.setLoading(false);
-    this.setState({ cards: cardsWithAnim,currentIndex: 0 });
+    this.whiteFlash();
+    this.setState({ cards: cardsWithAnim,currentIndex: 0, cardsReady: true, });
   };
 
   uploadBase64Image = async (base64) => {
@@ -250,7 +259,7 @@ class HomeScreen extends Component {
     if (currentIndex < cards.length - 1) {
 
       const topCardAnim = cards[currentIndex].flyAnim;
-      cards[currentIndex].isSelected = false;
+      
 
       Animated.timing(topCardAnim, {
         toValue: -screenHeight,
@@ -264,39 +273,116 @@ class HomeScreen extends Component {
             currentIndex: prev.currentIndex + 1,
           })
         );
-        cards[currentIndex].isSelected = true;
+        
       });
     }else{
-      cards[currentIndex].isSelected = true;
-      this.setState({ packOpening: true, cards: [], shouldPlay: false });
+      
+      this.setState({ packOpening: true, cards: [], shouldPlay: false, cardsReady: false });
       this.startHover();
     }
   };
 
   animatePackOpen = () => {
-    
     this.setState({ shouldPlay: true });
 
+    // Kick off card generation early
+    this.packOpened(); // sets cards + cardsReady
+  // Step 1: Float up and rotate a little
+    Animated.parallel([
     Animated.timing(this.state.packY, {
-      toValue: -600, // move up by 300 pixels
+      toValue: -150,
       duration: 500,
       useNativeDriver: true,
-    }).start(() => {
-      // starts after animation
-      this.setState({ packOpening: false, packY: new Animated.Value(0) }); // or trigger card reveal
-      this.packOpened();
-    });
-  };
+    }),
+    Animated.timing(this.state.packRotate, {
+      toValue: 1, // 0 to 1 for rotation
+      duration: 500,
+      useNativeDriver: true,
+    }),
+  ]).start(() => {
+    // Step 2: Shake violently
+    Animated.sequence([
+      Animated.timing(this.state.packShake, {
+        toValue: 10,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(this.state.packShake, {
+        toValue: -10,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(this.state.packShake, {
+        toValue: 6,
+        duration: 80,
+        useNativeDriver: true,
+      }),
+      Animated.timing(this.state.packShake, {
+        toValue: -6,
+        duration: 80,
+        useNativeDriver: true,
+      }),
+      Animated.timing(this.state.packShake, {
+        toValue: 0,
+        duration: 60,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      // Step 3: White flash + pack disappears
+      this.setState({ packOpening: false });
 
-  
+      setTimeout(() => {
+        this.setState({
+          packY: new Animated.Value(0),
+          packShake: new Animated.Value(0),
+          packRotate: new Animated.Value(0),
+        });
+      }, 400);
+    });
+  });
+};
+
+  whiteFlash = async () => {
+    
+    this.setState({showWhiteFlash: true})
+
+    setTimeout(() => {
+        this.setState({ showWhiteFlash: false });
+      }, 400);
+  }
 
   render() {
-  const { cards, currentIndex, packOpening, packY, } = this.state;
+  const { cards, currentIndex, packOpening, packY, cardsReady, showWhiteFlash } = this.state;
+
+    const rotateInterpolate = this.state.packRotate.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '10deg'], // slight tilt
+  });
+
+  const shakeStyle = {
+    transform: [
+      { translateY: this.state.packY },
+      { translateX: this.state.packShake },
+      { rotate: rotateInterpolate }
+    ]
+  };
+
 
 return (
   
   
   <View style={styles.container}>
+
+    {showWhiteFlash && (
+      <View style={{
+        backgroundColor: '#fff',
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        zIndex: 999,
+      }} />
+    )}
+
 
     <LottieView
       source={background}
@@ -310,10 +396,17 @@ return (
     </LottieView>
 
 
+    
+
     {packOpening && (
       <TouchableOpacity onPress={this.animatePackOpen}>
-        <Animated.View style={{ transform: [{ translateY: packY }], justifyContent: 'center',  // center children
-          alignItems: 'center', position: 'relative', width:200, height: 300} }>
+        <Animated.View style={[shakeStyle, {
+          justifyContent: 'center',
+          alignItems: 'center',
+          position: 'relative',
+          width: 200,
+          height: 300,
+        }]}>
 
           <Image
             source={packImage}
@@ -355,7 +448,12 @@ return (
     )}
 
     
-     {cards.length > 0 && (
+
+
+
+
+    
+     {cardsReady && !showWhiteFlash && (
       <TouchableOpacity onPress={this.revealNextCard} activeOpacity={0.9}>
         <View style={styles.cardContainer}>
           {cards.map((card, index) => {

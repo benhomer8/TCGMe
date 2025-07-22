@@ -6,7 +6,7 @@ class Card {
     this.caption = caption;
     this.rarity = 0;
     this.isFullArt = options.isFullArt || false;
-    this.isFoil = Math.random() < 1;
+    this.isFoil = Math.random() < .2;
     this.createdAt = new Date().toDateString();
     this.name = options.name || "Untitled Card";
     this.color = options.color || "white";
@@ -34,7 +34,7 @@ class Card {
 
 
     if(!(this.isFoil)){
-      items = ["white", "lightsalmon", "navajowhite", "paleturquoise", "powderblue", "palegreen", "plum", "lightsteelblue", "lemonchiffon", "lavender"];
+      const items = ["white", "lightsalmon", "navajowhite", "paleturquoise", "powderblue", "palegreen", "plum", "lightsteelblue", "lemonchiffon", "lavender"];
       this.color = items[Math.floor(Math.random()*items.length)];
       this.rarity = 1; // Common
     }
