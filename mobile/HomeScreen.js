@@ -163,6 +163,12 @@ class HomeScreen extends Component {
           });
 
           card.setCardName();
+          if (card.name.length > 22) {
+            attempts++;
+            continue;
+          }
+
+
           this.saveCard(card);
           return card;
         } catch (error) {
@@ -244,21 +250,24 @@ class HomeScreen extends Component {
     if (currentIndex < cards.length - 1) {
 
       const topCardAnim = cards[currentIndex].flyAnim;
+      cards[currentIndex].isSelected = false;
 
       Animated.timing(topCardAnim, {
         toValue: -screenHeight,
         duration: 400,
         useNativeDriver: true,
       }).start(() => {
-
+        
         // Immediately move to the next card and reset animation
         this.setState(
           prev => ({
             currentIndex: prev.currentIndex + 1,
           })
         );
+        cards[currentIndex].isSelected = true;
       });
     }else{
+      cards[currentIndex].isSelected = true;
       this.setState({ packOpening: true, cards: [], shouldPlay: false });
       this.startHover();
     }
@@ -372,7 +381,7 @@ return (
                   animatedStyle,
                 ]}
               >
-                <InteractiveCard selectedCard={card} CARD_HEIGHT={screenHeight * 0.5} CARD_WIDTH={screenWidth * 0.8}></InteractiveCard>
+                <InteractiveCard selectedCard={{ ...card, isSelected: true }} CARD_HEIGHT={screenHeight * 0.5} CARD_WIDTH={screenWidth * 0.8}></InteractiveCard>
               </Animated.View>
 
             );

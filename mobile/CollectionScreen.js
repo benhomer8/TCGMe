@@ -39,7 +39,8 @@ export default function CollectionScreen() {
   );
 
   const renderCard = ({ item }) => (
-    <TouchableOpacity onPress={() => setSelectedCard(item)} style={[styles.card, { backgroundColor: item?.color || '#fff' }]}>
+    <TouchableOpacity onPress={() => setSelectedCard({ ...item, isSelected: true })
+      } style={[styles.card, { backgroundColor: item?.color || '#fff' }]}>
       {item.isFoil && (
       <LottieView
           source={rainbowEffect}
@@ -68,6 +69,7 @@ export default function CollectionScreen() {
       {/* Zoom Modal */}
       <Modal visible={!!selectedCard} transparent animationType="slide">
         <View style={styles.modalOverlay}>
+          
           
           <InteractiveCard
             selectedCard={selectedCard}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,10 +13,21 @@ import LogoSVG from './LogoSVG';
 import LottieView from 'lottie-react-native';
 
 const rainbowEffect = require('./assets/lottie_animations/rainbow_gradient.json');
+const threeStar = require('./assets/lottie_animations/3Star.json');
+const oneStar = require('./assets/lottie_animations/1Star.json');
+const sevenStar = require('./assets/lottie_animations/7Star.json');
+
 
 export default function InteractiveCard({ selectedCard, CARD_HEIGHT, CARD_WIDTH,}) {
   const rotateX = useSharedValue(0);
   const rotateY = useSharedValue(0);
+  const starAnimationRef = useRef(null);
+
+  useEffect(() => {
+  if (selectedCard?.isSelected && starAnimationRef.current) {
+    starAnimationRef.current.play();
+  }
+}, [selectedCard]);
 
   const gesture = Gesture.Pan()
     .onUpdate((event) => {
@@ -60,10 +71,39 @@ export default function InteractiveCard({ selectedCard, CARD_HEIGHT, CARD_WIDTH,
               style={styles.rainbowRareEffect}
             />
           )}
+          {selectedCard?.rarity == 2 && (
+          <LottieView
+              ref={starAnimationRef}
+              source={threeStar}
+              autoPlay={false}
+              loop={false}
+              style={styles.StarEffect}
+            />
+          )}
+          {selectedCard?.rarity == 1 && (
+          <LottieView
+              ref={starAnimationRef}
+              source={oneStar}
+              autoPlay={false}
+              loop={false}
+              style={styles.StarEffect}
+            />
+          )}
+          {selectedCard?.rarity == 3 && (
+          <LottieView
+              ref={starAnimationRef}
+              source={sevenStar}
+              autoPlay={false}
+              loop={false}
+              style={styles.StarEffect}
+            />
+          )}
           <Text style={[ 
             styles.name,{
             fontSize: 20,
             marginTop: '3%',
+            alignSelf: 'left',
+            marginLeft: '3%',
           }
         ]
           }>{selectedCard?.name}</Text>
@@ -133,5 +173,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden'
   },
 
+  StarEffect: {
+    width: '25%',
+    height: '25%',
+    left: "70%",
+    bottom: "83%",
+    position: 'absolute',
+  },
 
 });

@@ -4,12 +4,13 @@ class Card {
   constructor(imageUri, caption, options = {}) {
     this.imageUri = imageUri;
     this.caption = caption;
-    this.rarity = options.rarity || "common";
+    this.rarity = 0;
     this.isFullArt = options.isFullArt || false;
-    this.isFoil = Math.random() < 0.2;
+    this.isFoil = Math.random() < 1;
     this.createdAt = new Date().toDateString();
     this.name = options.name || "Untitled Card";
     this.color = options.color || "white";
+    this.isSelected = false;
   }
 
   setCardName() {
@@ -29,9 +30,16 @@ class Card {
 
     }
 
+   
+
+
     if(!(this.isFoil)){
       items = ["white", "lightsalmon", "navajowhite", "paleturquoise", "powderblue", "palegreen", "plum", "lightsteelblue", "lemonchiffon", "lavender"];
       this.color = items[Math.floor(Math.random()*items.length)];
+      this.rarity = 1; // Common
+    }
+    else {
+      this.rarity = 2; // Rare
     }
 
   }
