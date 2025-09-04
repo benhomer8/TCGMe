@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Component } from 'react';
 import { Alert } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
@@ -16,7 +16,7 @@ export default function Navigation() {
   const [playCollectionAnim, setPlayCollectionAnim] = useState(false);
   const [shouldResetCollection, setShouldResetCollection] = useState(false);
 
-
+ 
   return (
     <NavigationContainer>
       <Tab.Navigator screenOptions={{ headerShown: false, tabBarShowLabel: false,

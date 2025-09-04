@@ -12,7 +12,7 @@ import {
   Animated,
 } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
-import { manipulateAsync, SaveFormat, useImageManipulator } from 'expo-image-manipulator';
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system';
 import Card from './Card';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -123,42 +123,51 @@ class HomeScreen extends Component {
     this.context.setLoading(true);
     this.setState({cards: [], currentIndex: 0 });
 
-    const amountPerPack = 3; // Number of cards per pack
+    const amountPerPack = 1; // Number of cards per pack
     const failedImageIds = new Set();
 
     const createSingleCard = async () => {
       let attempts = 0;
       while (attempts < 5) {
         try {
+          console.log('Generating card attempt:', attempts + 1);
           const randomIndex = Math.floor(Math.random() * allPhotos.length);
           const selected = allPhotos[randomIndex];
-
+          console.log(1);
           if (failedImageIds.has(selected.id)) {
             attempts++;
             continue;
           }
-
+          console.log(2);
           const assetInfo = await MediaLibrary.getAssetInfoAsync(selected.id);
           const imageUri = assetInfo.localUri || assetInfo.uri;
           
-
-          const result = await manipulateAsync(
-            imageUri,
-            [],
-            {
-              compress: 0.1,
-              format: SaveFormat.WEBP,
-            }
+          console.log(3);
+          
+          const manipResult = await ImageManipulator.manipulateAsync(
+              imageUri,
+              [],
+              { format: "webp",
+                compress: 0.1, // Adjust compression as needed
+               }
           );
 
-          const resizedUri = result.uri;
-
+          //const context = ImageManipulator.manipulate(imageUri);
+          //const image = await context.renderAsync();
+          //const result = await image.saveAsync({
+           // format: SaveFormat.PNG,
+            //compress: 0.1,
+          //});
+            
+          console.log(4);
+          const resizedUri = manipResult.uri;
+          console.log(5);
           const base64 = await FileSystem.readAsStringAsync(resizedUri, {
             encoding: FileSystem.EncodingType.Base64,
           });
-
+          console.log('Base64 image upload');
           const caption = await this.uploadBase64Image(base64);
-
+          console.log('Caption received:');
           if (!caption || (!(caption.toLowerCase().includes("--")))) {
             failedImageIds.add(selected.id);
             attempts++;
@@ -197,7 +206,7 @@ class HomeScreen extends Component {
       flyAnim: new Animated.Value(0),
     }));
     this.context.setLoading(false);
-    this.whiteFlash();
+    
     this.setState({ cards: cardsWithAnim,currentIndex: 0, cardsReady: true, });
   };
 
@@ -282,54 +291,65 @@ class HomeScreen extends Component {
     }
   };
 
-  animatePackOpen = () => {
-    this.setState({ shouldPlay: true });
+  animatePackOpen = async () => {
+    
 
     // Kick off card generation early
     this.packOpened(); // sets cards + cardsReady
   // Step 1: Float up and rotate a little
+await new Promise(resolve => {
     Animated.parallel([
-    Animated.timing(this.state.packY, {
-      toValue: -150,
-      duration: 500,
-      useNativeDriver: true,
-    }),
-    Animated.timing(this.state.packRotate, {
-      toValue: 1, // 0 to 1 for rotation
-      duration: 500,
-      useNativeDriver: true,
-    }),
-  ]).start(() => {
-    // Step 2: Shake violently
-    Animated.sequence([
-      Animated.timing(this.state.packShake, {
-        toValue: 10,
-        duration: 100,
+      Animated.timing(this.state.packY, {
+        toValue: -150,
+        duration: 500,
         useNativeDriver: true,
       }),
-      Animated.timing(this.state.packShake, {
-        toValue: -10,
-        duration: 100,
+      Animated.timing(this.state.packRotate, {
+        toValue: 1,
+        duration: 500,
         useNativeDriver: true,
       }),
-      Animated.timing(this.state.packShake, {
-        toValue: 6,
-        duration: 80,
-        useNativeDriver: true,
-      }),
-      Animated.timing(this.state.packShake, {
-        toValue: -6,
-        duration: 80,
-        useNativeDriver: true,
-      }),
-      Animated.timing(this.state.packShake, {
-        toValue: 0,
-        duration: 60,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
+    ]).start(() => resolve());
+  });
+
+  // Step 2: Shake violently in a loop until cards are ready
+  while (!this.state.cardsReady) {
+    await new Promise(resolve => {
+      Animated.sequence([
+        Animated.timing(this.state.packShake, {
+          toValue: 10,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(this.state.packShake, {
+          toValue: -10,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(this.state.packShake, {
+          toValue: 6,
+          duration: 80,
+          useNativeDriver: true,
+        }),
+        Animated.timing(this.state.packShake, {
+          toValue: -6,
+          duration: 80,
+          useNativeDriver: true,
+        }),
+        Animated.timing(this.state.packShake, {
+          toValue: 0,
+          duration: 60,
+          useNativeDriver: true,
+        }),
+      ]).start(() => resolve());
+    });
+
+    await new Promise(res => setTimeout(res, 50)); // tiny pause between shakes
+  }
       // Step 3: White flash + pack disappears
-      this.setState({ packOpening: false });
+      this.setState({ showWhiteFlash: true, packOpening: false });
+
+      this.whiteFlash();
 
       setTimeout(() => {
         this.setState({
@@ -338,31 +358,30 @@ class HomeScreen extends Component {
           packRotate: new Animated.Value(0),
         });
       }, 400);
-    });
-  });
+    
+  
 };
 
   whiteFlash = async () => {
     
-    this.setState({showWhiteFlash: true})
 
     setTimeout(() => {
         this.setState({ showWhiteFlash: false });
-      }, 400);
+      }, 600);
   }
 
   render() {
-  const { cards, currentIndex, packOpening, packY, cardsReady, showWhiteFlash } = this.state;
+  const { cards, currentIndex, packOpening, packY, cardsReady, showWhiteFlash, packShake, packRotate } = this.state;
 
-    const rotateInterpolate = this.state.packRotate.interpolate({
+    const rotateInterpolate = packRotate.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '10deg'], // slight tilt
   });
 
   const shakeStyle = {
     transform: [
-      { translateY: this.state.packY },
-      { translateX: this.state.packShake },
+      { translateY: packY },
+      { translateX: packShake },
       { rotate: rotateInterpolate }
     ]
   };
@@ -453,7 +472,7 @@ return (
 
 
     
-     {cardsReady && !showWhiteFlash && (
+     {cardsReady && !showWhiteFlash && !packOpening && (
       <TouchableOpacity onPress={this.revealNextCard} activeOpacity={0.9}>
         <View style={styles.cardContainer}>
           {cards.map((card, index) => {

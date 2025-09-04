@@ -61,7 +61,7 @@ export default function InteractiveCard({ selectedCard, CARD_HEIGHT, CARD_WIDTH,
 
   return (
     <GestureDetector gesture={gesture}>
-      <Animated.View style={[styles.modalContent, { backgroundColor: selectedCard?.color || '#fff', borderWidth: 3, borderColor: 'grey', height: CARD_HEIGHT,
+      <Animated.View style={[styles.modalContent, { backgroundColor: selectedCard?.color || '#fff', borderWidth: 3, borderColor: 'black', height: CARD_HEIGHT,
               width: CARD_WIDTH, }, rStyle,]}>
           {selectedCard?.isFoil && (
           <LottieView
@@ -99,11 +99,12 @@ export default function InteractiveCard({ selectedCard, CARD_HEIGHT, CARD_WIDTH,
             />
           )}
           <Text style={[ 
-            styles.name,{
+            {
             fontSize: 20,
             marginTop: '3%',
             alignSelf: 'left',
             marginLeft: '3%',
+            fontFamily: 'CardNameFont',
           }
         ]
           }>{selectedCard?.name}</Text>
@@ -145,8 +146,10 @@ const styles = StyleSheet.create({
     height: '50%',
     borderRadius: 5,
     marginTop: '2%',
-    borderColor: 'grey',
+    borderColor: 'black',
     borderWidth: 2,
+    shadowColor: 'black',
+    shadowOffset: { width: 0, height: 2 },
   },
   modalCaption: {
     fontSize: 16,
@@ -155,6 +158,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     textAlign: 'center',
     maxWidth: "90%",
+
     
   },
   modalMeta: {
@@ -163,6 +167,7 @@ const styles = StyleSheet.create({
     color: '#555',
     textAlign: 'center',
     fontStyle: 'italic',
+    fontFamily: 'Arial',
   },
 
   rainbowRareEffect: {
