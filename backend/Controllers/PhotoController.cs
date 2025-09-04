@@ -29,7 +29,7 @@ namespace backend.Controllers
             try
             {
                 Console.WriteLine("Received request body:");
-                var apiKey = "Omitted for Github";
+                var apiKey = _config["CHAT_API_KEY"];
                 if (string.IsNullOrWhiteSpace(apiKey))
                     return StatusCode(500, "OpenAI API key is not configured.");
                     
