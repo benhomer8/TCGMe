@@ -32,7 +32,7 @@ namespace backend.Controllers
                 var apiKey = "Omitted for Github";
                 if (string.IsNullOrWhiteSpace(apiKey))
                     return StatusCode(500, "OpenAI API key is not configured.");
-
+                    
                 // Extract "messages" from the bound requestBody
                 if (!requestBody.TryGetProperty("messages", out var messages))
                     return BadRequest(new { error = "Missing 'messages' in request body." });
